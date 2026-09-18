@@ -1,0 +1,118 @@
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>AI Background Remover</title>
+
+    <link
+        rel="stylesheet"
+        href="style.css"
+    >
+
+</head>
+
+
+<body>
+    <div class="logo-container">
+
+        <img
+            src="logo.avif"
+            alt="AI Background Remover Logo"
+            class="logo"
+        >
+
+    </div>
+    <div class="container">
+
+        <div class="card">
+
+            <h1>AI Background Remover</h1>
+
+            <p class="subtitle">
+                Select a folder and remove backgrounds
+                from all supported images.
+            </p>
+            <div class="upload-area">
+
+                <input
+                    type="file"
+                    id="folderInput"
+                    webkitdirectory
+                    directory
+                    multiple
+                    hidden
+                >
+
+
+                <label
+                    for="folderInput"
+                    class="select-button"
+                >
+                     Select Image Folder
+                </label>
+
+
+                <p id="folderName">
+                    No folder selected
+                </p>
+
+
+                <p id="imageCount">
+                    0 images
+                </p>
+
+            </div>
+
+            <button
+                id="processButton"
+                class="process-button"
+                disabled
+            >
+                Remove Background
+            </button>
+            <div
+                id="progressContainer"
+                class="progress-container"
+            >
+
+                <div class="progress-bar">
+
+                    <div
+                        id="progressBar"
+                        class="progress"
+                    ></div>
+
+                </div>
+
+
+                <p id="progressText">
+                    Processing...
+                </p>
+
+            </div>
+
+            <div
+                id="result"
+                class="result"
+            ></div>
+
+
+        </div>
+
+    </div>
+
+    <script src="script.js"></script>
+
+</body>
+
+</html>
+
