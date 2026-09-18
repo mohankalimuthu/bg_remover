@@ -17,7 +17,7 @@ const result =
 
 
 const API_URL =
-    "http://127.0.0.1:8000/remove-background";
+    "https://bg-remover-vysf.onrender.com/";
 
 const SUPPORTED_EXTENSIONS = [
     ".jpg",

@@ -1,4 +1,3 @@
-
 from pathlib import Path
 import shutil
 
@@ -15,7 +14,7 @@ from bg_remover import BackgroundRemover
 
 
 # ============================================================
-# FASTAPI APPLICATION
+# FASTAPI APP
 # ============================================================
 
 app = FastAPI(
@@ -35,7 +34,7 @@ app.add_middleware(
     allow_origins=[
         "https://fanciful-creponne-1bf047.netlify.app"
     ],
-#https://fanciful-creponne-1bf047.netlify.app
+
     allow_credentials=True,
 
     allow_methods=["*"],
@@ -50,13 +49,11 @@ app.add_middleware(
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-
 UPLOAD_DIR = (
     BASE_DIR
     / "uploads"
     / "input"
 )
-
 
 OUTPUT_DIR = (
     BASE_DIR
@@ -70,7 +67,6 @@ UPLOAD_DIR.mkdir(
     exist_ok=True
 )
 
-
 OUTPUT_DIR.mkdir(
     parents=True,
     exist_ok=True
@@ -82,16 +78,15 @@ OUTPUT_DIR.mkdir(
 # ============================================================
 #
 # IMPORTANT:
-# We create the object here, but the AI model should NOT
-# be loaded during FastAPI startup.
+# BackgroundRemover object is created,
+# but model should NOT load inside __init__().
 #
-# Your BackgroundRemover class should use:
+# bg_remover.py must use:
 #
 # self.session = None
 #
-# and load the model only inside get_session().
+# and load u2netp only when processing starts.
 #
-# ============================================================
 
 background_remover = BackgroundRemover(
     output_directory=str(OUTPUT_DIR)
@@ -99,7 +94,7 @@ background_remover = BackgroundRemover(
 
 
 # ============================================================
-# SUPPORTED FILE TYPES
+# SUPPORTED EXTENSIONS
 # ============================================================
 
 SUPPORTED_EXTENSIONS = {
@@ -111,37 +106,7 @@ SUPPORTED_EXTENSIONS = {
 
 
 # ============================================================
-# HELPER FUNCTION
-# ============================================================
-
-def clean_directory(directory: Path):
-
-    """
-    Delete all files from a directory.
-    """
-
-    if not directory.exists():
-        return
-
-    for item in directory.iterdir():
-
-        try:
-
-            if item.is_file():
-                item.unlink()
-
-            elif item.is_dir():
-                shutil.rmtree(item)
-
-        except Exception as error:
-
-            print(
-                f"Could not delete {item}: {error}"
-            )
-
-
-# ============================================================
-# ROOT / HEALTH CHECK
+# ROOT
 # ============================================================
 
 @app.get("/")
@@ -153,6 +118,10 @@ def home():
         "version": "1.0.0"
     }
 
+
+# ============================================================
+# HEALTH CHECK
+# ============================================================
 
 @app.get("/health")
 def health():
@@ -171,59 +140,72 @@ async def remove_background(
     files: list[UploadFile] = File(...)
 ):
 
+    print(
+        f"Received {len(files)} files"
+    )
+
+
     # --------------------------------------------------------
-    # Validate request
+    # Validate files
     # --------------------------------------------------------
 
     if not files:
 
         raise HTTPException(
             status_code=400,
-            detail="No files were uploaded."
+            detail="No files uploaded."
         )
 
 
     # --------------------------------------------------------
-    # Clean previous temporary files
+    # Clean previous files
     # --------------------------------------------------------
 
-    clean_directory(
-        UPLOAD_DIR
-    )
+    for item in UPLOAD_DIR.iterdir():
 
-    clean_directory(
-        OUTPUT_DIR
-    )
+        if item.is_file():
 
+            item.unlink()
+
+        elif item.is_dir():
+
+            shutil.rmtree(item)
+
+
+    for item in OUTPUT_DIR.iterdir():
+
+        if item.is_file():
+
+            item.unlink()
+
+        elif item.is_dir():
+
+            shutil.rmtree(item)
+
+
+    # --------------------------------------------------------
+    # Save uploaded images
+    # --------------------------------------------------------
 
     uploaded_files = []
 
 
-    # --------------------------------------------------------
-    # Save uploaded files
-    # --------------------------------------------------------
-
     for file in files:
 
         if not file.filename:
+
             continue
 
-
-        # Get safe filename
 
         filename = Path(
             file.filename
         ).name
 
 
-        # Get extension
-
         extension = Path(
             filename
         ).suffix.lower()
 
-
-        # Ignore unsupported files
 
         if extension not in SUPPORTED_EXTENSIONS:
 
@@ -259,21 +241,13 @@ async def remove_background(
             )
 
 
-        except Exception as error:
-
-            print(
-                f"Upload failed: "
-                f"{filename} - {error}"
-            )
-
-
         finally:
 
             await file.close()
 
 
     # --------------------------------------------------------
-    # Check valid images
+    # Validate uploaded images
     # --------------------------------------------------------
 
     if not uploaded_files:
@@ -281,14 +255,14 @@ async def remove_background(
         raise HTTPException(
             status_code=400,
             detail=(
-                "No supported images were uploaded. "
-                "Supported formats: JPG, JPEG, PNG, WEBP."
+                "No supported images found. "
+                "Use JPG, JPEG, PNG or WEBP."
             )
         )
 
 
     # --------------------------------------------------------
-    # Background Removal
+    # Process images
     # --------------------------------------------------------
 
     try:
@@ -310,62 +284,56 @@ async def remove_background(
     except Exception as error:
 
         print(
-            f"Background removal failed: "
-            f"{error}"
+            f"Background removal error: {error}"
         )
-
 
         raise HTTPException(
             status_code=500,
-            detail=(
-                "Background removal failed. "
-                "Please try again."
-            )
+            detail="Background removal failed."
         )
 
 
     # --------------------------------------------------------
-    # API Response
+    # Response
     # --------------------------------------------------------
 
     return {
 
         "success": True,
 
-        "message": (
-            "Background removal completed successfully."
-        ),
+        "message":
+            "Background removal completed.",
 
-        "uploaded": len(
-            uploaded_files
-        ),
+        "uploaded":
+            len(uploaded_files),
 
-        "total": result.get(
-            "total",
-            len(uploaded_files)
-        ),
+        "total":
+            result.get(
+                "total",
+                0
+            ),
 
-        "processed": result.get(
-            "processed",
-            0
-        ),
+        "processed":
+            result.get(
+                "processed",
+                0
+            ),
 
-        "failed": result.get(
-            "failed",
-            0
-        ),
+        "failed":
+            result.get(
+                "failed",
+                0
+            ),
 
-        "total_time": result.get(
-            "total_time",
-            0
-        ),
+        "total_time":
+            result.get(
+                "total_time",
+                0
+            ),
 
-        "results": result.get(
-            "results",
-            []
-        ),
-
-        "output_directory": (
-            "outputs/bg_removed"
-        )
+        "results":
+            result.get(
+                "results",
+                []
+            )
     }
