@@ -1,7 +1,10 @@
 fastapi
-uvicorn[standard]
+uvicorn
 python-multipart
+Pillow
 rembg
 onnxruntime
-Pillow
-
+numpy
+scipy
+scikit-image
+pymatting
