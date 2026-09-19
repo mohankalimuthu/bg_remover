@@ -1,118 +1,185 @@
-
 <!DOCTYPE html>
+
 <html lang="en">
 
 <head>
 
-    <meta charset="UTF-8">
 
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
+<meta charset="UTF-8">
 
-    <title>AI Background Remover</title>
+<meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+>
 
-    <link
-        rel="stylesheet"
-        href="style.css"
-    >
+<title>AI Background Remover</title>
+
+<link
+    rel="stylesheet"
+    href="style.css"
+>
+```
 
 </head>
 
-
 <body>
-    <div class="logo-container">
 
-        <img
-            src="logo.avif"
-            alt="AI Background Remover Logo"
-            class="logo"
-        >
+```
+<!-- =====================================================
+     LOGO
+====================================================== -->
 
-    </div>
-    <div class="container">
+<div class="logo-container">
 
-        <div class="card">
+    <img
+        src="logo.avif"
+        alt="AI Background Remover Logo"
+        class="logo"
+    >
 
-            <h1>AI Background Remover</h1>
+</div>
 
-            <p class="subtitle">
-                Select a folder and remove backgrounds
-                from all supported images.
+
+<!-- =====================================================
+     MAIN CONTAINER
+====================================================== -->
+
+<div class="container">
+
+    <div class="card">
+
+        <h1>
+            AI Background Remover
+        </h1>
+
+
+        <p class="subtitle">
+            Select a folder and remove backgrounds
+            from all supported images.
+        </p>
+
+
+        <!-- =================================================
+             UPLOAD AREA
+        ================================================== -->
+
+        <div class="upload-area">
+
+            <input
+                type="file"
+                id="folderInput"
+                webkitdirectory
+                directory
+                multiple
+                hidden
+            >
+
+
+            <label
+                for="folderInput"
+                class="select-button"
+            >
+                Select Image Folder
+            </label>
+
+
+            <p id="folderName">
+                No folder selected
             </p>
-            <div class="upload-area">
-
-                <input
-                    type="file"
-                    id="folderInput"
-                    webkitdirectory
-                    directory
-                    multiple
-                    hidden
-                >
 
 
-                <label
-                    for="folderInput"
-                    class="select-button"
-                >
-                     Select Image Folder
-                </label>
-
-
-                <p id="folderName">
-                    No folder selected
-                </p>
-
-
-                <p id="imageCount">
-                    0 images
-                </p>
-
-            </div>
-
-            <button
-                id="processButton"
-                class="process-button"
-                disabled
-            >
-                Remove Background
-            </button>
-            <div
-                id="progressContainer"
-                class="progress-container"
-            >
-
-                <div class="progress-bar">
-
-                    <div
-                        id="progressBar"
-                        class="progress"
-                    ></div>
-
-                </div>
-
-
-                <p id="progressText">
-                    Processing...
-                </p>
-
-            </div>
-
-            <div
-                id="result"
-                class="result"
-            ></div>
-
+            <p id="imageCount">
+                0 images
+            </p>
 
         </div>
 
+
+        <!-- =================================================
+             PROCESS BUTTON
+        ================================================== -->
+
+        <button
+            id="processButton"
+            class="process-button"
+            disabled
+        >
+            Remove Background
+        </button>
+
+
+        <!-- =================================================
+             PROGRESS
+        ================================================== -->
+
+        <div
+            id="progressContainer"
+            class="progress-container"
+            style="display: none;"
+        >
+
+            <div class="progress-bar">
+
+                <div
+                    id="progressBar"
+                    class="progress"
+                ></div>
+
+            </div>
+
+
+            <p id="progressText">
+                Processing...
+            </p>
+
+        </div>
+
+
+        <!-- =================================================
+             LIVE PROCESSING LOG
+        ================================================== -->
+
+        <div
+            id="processingLogContainer"
+            class="processing-log-container"
+            style="display: none;"
+        >
+
+            <h3>
+                Processing Log
+            </h3>
+
+
+            <pre
+                id="processLog"
+                class="process-log"
+            ></pre>
+
+        </div>
+
+
+        <!-- =================================================
+             RESULT
+        ================================================== -->
+
+        <div
+            id="result"
+            class="result"
+        ></div>
+
+
     </div>
 
-    <script src="script.js"></script>
+</div>
+
+
+<!-- =====================================================
+     JAVASCRIPT
+====================================================== -->
+
+<script src="script.js"></script>
+
 
 </body>
 
 </html>
-

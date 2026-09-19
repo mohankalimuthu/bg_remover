@@ -1,4 +1,3 @@
-
 from pathlib import Path
 import time
 
@@ -8,10 +7,6 @@ from PIL import Image
 
 class BackgroundRemover:
 
-    # ============================================================
-    # SUPPORTED IMAGE FORMATS
-    # ============================================================
-
     SUPPORTED_EXTENSIONS = {
         ".jpg",
         ".jpeg",
@@ -19,17 +14,7 @@ class BackgroundRemover:
         ".webp"
     }
 
-
-    # ============================================================
-    # MAX IMAGE SIZE
-    # ============================================================
-
     MAX_SIZE = 1280
-
-
-    # ============================================================
-    # INITIALIZATION
-    # ============================================================
 
     def __init__(
         self,
@@ -45,32 +30,21 @@ class BackgroundRemover:
             exist_ok=True
         )
 
-
-        # IMPORTANT:
-        # Do NOT load the AI model here.
-        #
-        # Loading the model during FastAPI startup can cause
-        # Render to run out of memory before the server opens
-        # its port.
-        #
-
+        # Lazy loading
         self.session = None
 
-
     # ============================================================
-    # LAZY MODEL LOADING
+    # LAZY MODEL
     # ============================================================
 
-    def get_session(self):
-
-        """
-        Load the U2NetP model only when required.
-
-        The model is loaded once and then reused for all
-        subsequent images.
-        """
+    def get_session(self, progress_callback=None):
 
         if self.session is None:
+
+            if progress_callback:
+                progress_callback(
+                    "Loading background removal model..."
+                )
 
             print(
                 "Loading background removal model..."
@@ -78,25 +52,23 @@ class BackgroundRemover:
 
             start = time.time()
 
-
             self.session = new_session(
                 "u2netp"
             )
 
+            elapsed = time.time() - start
 
-            elapsed = (
-                time.time() - start
-            )
-
-
-            print(
+            message = (
                 f"Model loaded in "
                 f"{elapsed:.2f} seconds"
             )
 
+            print(message)
+
+            if progress_callback:
+                progress_callback(message)
 
         return self.session
-
 
     # ============================================================
     # REMOVE BACKGROUND
@@ -104,17 +76,13 @@ class BackgroundRemover:
 
     def remove_background(
         self,
-        input_directory: str
+        input_directory: str,
+        progress_callback=None
     ):
 
         input_directory = Path(
             input_directory
         )
-
-
-        # --------------------------------------------------------
-        # Get supported images
-        # --------------------------------------------------------
 
         image_files = sorted(
 
@@ -130,11 +98,7 @@ class BackgroundRemover:
             )
         )
 
-
-        total_images = len(
-            image_files
-        )
-
+        total_images = len(image_files)
 
         # --------------------------------------------------------
         # No images
@@ -143,44 +107,42 @@ class BackgroundRemover:
         if total_images == 0:
 
             return {
-
                 "success": False,
-
-                "message":
-                    "No supported images found.",
-
+                "message": "No supported images found.",
                 "total": 0,
-
                 "processed": 0,
-
                 "failed": 0,
-
                 "total_time": 0,
-
                 "results": []
             }
 
+        # --------------------------------------------------------
+        # Starting
+        # --------------------------------------------------------
+
+        message = (
+            f"Starting background removal "
+            f"for {total_images} images..."
+        )
+
+        print(message)
+
+        if progress_callback:
+            progress_callback(message)
 
         # --------------------------------------------------------
         # Load model
         # --------------------------------------------------------
-        #
-        # The model will be loaded ONLY when the user
-        # actually sends images for processing.
-        #
 
-        session = self.get_session()
-
+        session = self.get_session(
+            progress_callback
+        )
 
         processed = 0
-
         failed = 0
-
         results = []
 
-
         total_start = time.time()
-
 
         # ========================================================
         # PROCESS IMAGES
@@ -193,24 +155,26 @@ class BackgroundRemover:
 
             start_time = time.time()
 
-
             output_path = (
 
                 self.output_directory
-
-                / f"{image_path.stem}_bg_rem.png"
+                /
+                f"{image_path.stem}_bg_rem.png"
 
             )
 
-
             try:
 
-                print(
+                message = (
                     f"[{index}/{total_images}] "
                     f"Processing: "
                     f"{image_path.name}"
                 )
 
+                print(message)
+
+                if progress_callback:
+                    progress_callback(message)
 
                 # ------------------------------------------------
                 # Open image
@@ -220,10 +184,7 @@ class BackgroundRemover:
                     image_path
                 ) as image:
 
-
-                    # --------------------------------------------
-                    # Convert unsupported image modes
-                    # --------------------------------------------
+                    # Convert mode
 
                     if image.mode not in (
                         "RGB",
@@ -234,10 +195,7 @@ class BackgroundRemover:
                             "RGB"
                         )
 
-
-                    # --------------------------------------------
-                    # Resize large images
-                    # --------------------------------------------
+                    # Resize
 
                     if max(
                         image.size
@@ -253,49 +211,33 @@ class BackgroundRemover:
                             Image.Resampling.LANCZOS
                         )
 
-
-                    # --------------------------------------------
+                    # ------------------------------------------------
                     # Remove background
-                    # --------------------------------------------
+                    # ------------------------------------------------
 
                     output_image = remove(
-
                         image,
-
                         session=session
                     )
 
-
-                    # --------------------------------------------
-                    # Save transparent PNG
-                    # --------------------------------------------
+                    # ------------------------------------------------
+                    # Save
+                    # ------------------------------------------------
 
                     output_image.save(
-
                         output_path,
-
                         "PNG",
-
                         optimize=False
                     )
 
-
-                    # Explicitly close output image
                     output_image.close()
-
-
-                # ------------------------------------------------
-                # Processing completed
-                # ------------------------------------------------
 
                 elapsed = (
                     time.time()
                     - start_time
                 )
 
-
                 processed += 1
-
 
                 results.append({
 
@@ -313,22 +255,23 @@ class BackgroundRemover:
                             elapsed,
                             2
                         )
+
                 })
 
-
-                print(
-
+                message = (
                     f"    ✓ Saved: "
                     f"{output_path.name} "
                     f"({elapsed:.2f}s)"
-
                 )
 
+                print(message)
+
+                if progress_callback:
+                    progress_callback(message)
 
             except Exception as error:
 
                 failed += 1
-
 
                 results.append({
 
@@ -343,35 +286,63 @@ class BackgroundRemover:
 
                     "error":
                         str(error)
+
                 })
 
-
-                print(
-
+                message = (
                     f"    ✗ Failed: "
                     f"{image_path.name}"
-
                 )
 
-                print(
+                print(message)
+
+                if progress_callback:
+                    progress_callback(message)
+
+                error_message = (
                     f"      Error: {error}"
                 )
 
+                print(error_message)
+
+                if progress_callback:
+                    progress_callback(
+                        error_message
+                    )
 
         # ========================================================
         # TOTAL TIME
         # ========================================================
 
         total_time = (
-
             time.time()
             - total_start
-
         )
 
+        completed_message = (
+            f"Completed: "
+            f"{processed}/{total_images}"
+        )
+
+        total_message = (
+            f"Total time: "
+            f"{total_time:.2f} seconds"
+        )
+
+        print(completed_message)
+        print(total_message)
+
+        if progress_callback:
+            progress_callback(
+                completed_message
+            )
+
+            progress_callback(
+                total_message
+            )
 
         # ========================================================
-        # RESPONSE
+        # RETURN
         # ========================================================
 
         return {
@@ -399,4 +370,3 @@ class BackgroundRemover:
             "results":
                 results
         }
-
